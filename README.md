@@ -1,8 +1,12 @@
-# tg-telnyx-notifier
+# Telnyx SMS/MMS to Telegram Notifier
 
-Приём входящих SMS/MMS с номеров Telnyx и пересылка их в Telegram-канал. Один
-процесс держит оба конца маршрута: FastAPI принимает webhook Telnyx, aiogram
-постит сообщение в канал и отвечает на команду бота `/activity`.
+Self-hosted Python-сервис для пересылки входящих Telnyx SMS и MMS в Telegram-канал.
+FastAPI принимает Telnyx webhooks, SQLite сохраняет надёжную очередь, а aiogram
+публикует сообщения и отвечает на `/activity`. Проект подходит для самостоятельного
+развёртывания через Docker или `uv`.
+
+Ключевые возможности: дедупликация по `event_id`, устойчивая очередь SQLite, адаптивная
+пауза между отправками, Telegram webhook с секретом и healthcheck с версией сборки.
 
 ## Как это работает
 
@@ -41,16 +45,25 @@ Telegram ──apdejt──▶ /telegram/updates ──────────�
 | `/failure` | POST | Telnyx | Запасной адрес, куда Telnyx повторяет доставку. |
 | `/telegram/updates` | POST | Telegram | Апдейты бота; требует заголовок `X-Telegram-Bot-Api-Secret-Token`. |
 
-## Запуск
+## Требования
+
+- Python 3.13 или новее и `uv` либо Docker.
+- Telnyx Messaging Profile с номером, принимающим SMS/MMS.
+- Telegram-бот с правом публикации в целевом канале.
+- HTTPS-адрес, доступный Telnyx и Telegram, для работы webhooks.
+
+## Установка и быстрый запуск (Installation)
 
 ### uv
 
 ```bash
 cp .env.example .env
-# заполнить TGTN_BOT_TOKEN, TGTN_CHAT_ID, TGTN_TELEGRAM_WEBHOOK_SECRET
 uv sync
 uv run tgtn
 ```
+
+Перед `uv run tgtn` заполните в `.env` как минимум `TGTN_BOT_TOKEN`,
+`TGTN_CHAT_ID` и `TGTN_TELEGRAM_WEBHOOK_SECRET`.
 
 ### Docker
 
@@ -63,6 +76,22 @@ docker run --env-file .env -p 8000:8000 -v tgtn-data:/app/data tg-telnyx-notifie
 контейнером. `TGTN_PUBLIC_URL` можно не задавать локально — тогда webhook
 Telegram не регистрируется, `/activity` недоступна, а пересылка сообщений
 работает как обычно.
+
+## Пример результата (Examples)
+
+После запуска healthcheck показывает статус и точную версию сборки:
+
+```bash
+curl http://localhost:8000/health
+```
+
+```json
+{"status":"ok","version":"0.4.1"}
+```
+
+Входящее `message.received` с направлением `inbound` получает ответ `202 Accepted` со
+статусом `queued`, `duplicate` или `ignored`. Ответ `queued` означает, что сообщение надёжно
+записано в SQLite и будет отправлено фоновым воркером.
 
 ## Настройка
 
@@ -92,3 +121,14 @@ uv run pytest --cov=tgtn --cov-report=term-missing --cov-fail-under=80
 
 Соглашения по коду, докстрингам и версионированию — в [`AGENTS.md`](AGENTS.md);
 адреса документации сторонних библиотек — в [`.claude/CLAUDE.md`](.claude/CLAUDE.md).
+
+## Поддержка и участие
+
+Ошибку или предложение можно оформить через [GitHub Issues](https://github.com/digitalhorizongroup/tg-telnyx-notifier/issues).
+Порядок локальной проверки и pull request описан в [`CONTRIBUTING.md`](CONTRIBUTING.md), а уязвимости
+следует сообщать по инструкции из [`SECURITY.md`](SECURITY.md).
+
+## Лицензия
+
+Отдельная open-source лицензия в репозитории не объявлена. До её публикации код нельзя
+считать разрешённым к использованию, изменению или распространению.

@@ -3,7 +3,7 @@ import logging
 import pytest
 from pydantic import ValidationError
 
-from tests.conftest import CHAT_ID, TOKEN, SettingsFactory
+from tests.conftest import CHAT_ID, SECRET, TOKEN, SettingsFactory
 from tgtn.core.config import SERVICE, Settings, setup_logging
 
 
@@ -11,6 +11,7 @@ def test_values_are_read_from_the_prefixed_environment(monkeypatch: pytest.Monke
     # Arrange
     monkeypatch.setenv("TGTN_BOT_TOKEN", TOKEN)
     monkeypatch.setenv("TGTN_CHAT_ID", str(CHAT_ID))
+    monkeypatch.setenv("TGTN_TELEGRAM_WEBHOOK_SECRET", SECRET)
 
     # Act
     settings = Settings.load()
