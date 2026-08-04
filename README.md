@@ -1,5 +1,7 @@
 # Telnyx SMS/MMS to Telegram Notifier
 
+[Telegram](https://t.me/digitalhorizongroup) · [Discord](https://discord.com/invite/fjqzSYCETC)
+
 Self-hosted Python-сервис для пересылки входящих Telnyx SMS и MMS в Telegram-канал.
 FastAPI принимает Telnyx webhooks, SQLite сохраняет надёжную очередь, а aiogram
 публикует сообщения и отвечает на `/activity`. Проект подходит для самостоятельного
@@ -127,8 +129,9 @@ uv run pytest --cov=tgtn --cov-report=term-missing --cov-fail-under=80
 Ошибку или предложение можно оформить через [GitHub Issues](https://github.com/digitalhorizongroup/tg-telnyx-notifier/issues).
 Порядок локальной проверки и pull request описан в [`CONTRIBUTING.md`](CONTRIBUTING.md), а уязвимости
 следует сообщать по инструкции из [`SECURITY.md`](SECURITY.md).
+Новости и обсуждения доступны в [Telegram](https://t.me/digitalhorizongroup) и
+[Discord](https://discord.com/invite/fjqzSYCETC) Digital Horizon Group.
 
 ## Лицензия
 
-Отдельная open-source лицензия в репозитории не объявлена. До её публикации код нельзя
-считать разрешённым к использованию, изменению или распространению.
+Проект распространяется по [MIT License](LICENSE).
