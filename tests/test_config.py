@@ -1,5 +1,4 @@
 import logging
-from collections.abc import Iterator
 
 import pytest
 from pydantic import ValidationError
@@ -12,22 +11,6 @@ CHAT_ID = -1001234567890
 
 def build_settings(**overrides: object) -> Settings:
     return Settings.model_validate({"bot_token": TOKEN, "chat_id": CHAT_ID, **overrides})
-
-
-@pytest.fixture
-def restore_logging() -> Iterator[None]:
-    root = logging.getLogger()
-    handlers, root_level = root.handlers[:], root.level
-    service_level = logging.getLogger(SERVICE).level
-
-    yield
-
-    for handler in root.handlers[:]:
-        root.removeHandler(handler)
-    for handler in handlers:
-        root.addHandler(handler)
-    root.setLevel(root_level)
-    logging.getLogger(SERVICE).setLevel(service_level)
 
 
 def test_values_are_read_from_the_prefixed_environment(monkeypatch: pytest.MonkeyPatch) -> None:

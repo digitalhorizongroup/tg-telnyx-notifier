@@ -19,7 +19,13 @@ dependencies = [
     # `uvicorn[standard]`: тот тянет watchfiles, httptools, PyYAML и
     # python-dotenv — нужные для авто-перезапуска, а не для приёма webhook.
     "uvicorn>=0.52.1",
+    "uvloop>=0.22.1",
 ]
+
+# Запуск — консольная команда и `python -m tgtn` разом: обе ведут в `main()`
+# того же модуля, отдельного скрипта-лаунчера в проекте нет.
+[project.scripts]
+tgtn = "tgtn.__main__:main"
 
 [build-system]
 requires = ["setuptools>=83.0.0"]
@@ -65,6 +71,11 @@ addopts = "-q --strict-markers --import-mode=importlib"
 # сигнатуре: при `auto` забытый `await` внутри синхронного теста молча проходит
 # как успешный — корутина создаётся и не запускается.
 asyncio_mode = "strict"
+
+[tool.coverage.report]
+# Строка запуска модуля не исполняется под pytest никогда: она есть ровно для
+# `python -m tgtn`, и её отсутствие в отчёте — не пробел в проверке.
+exclude_also = ['if __name__ == "__main__":']
 
 [tool.coverage.run]
 source = ["tgtn"]
@@ -154,6 +165,10 @@ extend-immutable-calls = [
 # рантайм-запрет, поэтому обойти статику — часть самой проверки.
 [tool.ruff.lint.per-file-ignores]
 "**/tests/**" = ["S101", "S105", "S106", "B010", "PLR2004", "ARG", "D"]
+# `S104` здесь описывает не риск, а работу сервиса: в контейнере свой адрес
+# заранее неизвестен, а `127.0.0.1` закрыл бы порт и от того, кто пробрасывает
+# webhook. Наружу порт публикует `docker run -p`, граница проходит по нему.
+"tgtn/core/config/environ.py" = ["S104"]
 
 [tool.mypy]
 # Плагин обязателен: `__init__` модели pydantic синтезируется в рантайме по

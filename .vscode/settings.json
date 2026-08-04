@@ -1,0 +1,68 @@
+{
+	// Интерпретатор — .venv проекта, который держит uv. Без явного указания
+	// Pylance берёт системный python, и все зависимости из манифеста выглядят
+	// неустановленными.
+	"python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
+	"python.terminal.activateEnvInCurrentTerminal": true,
+
+	// Форматирование и импорты — ruff, он же линтер. Отдельные black и isort в
+	// проекте не стоят, и включать их сюда нечем.
+	"[python]": {
+		"editor.defaultFormatter": "charliermarsh.ruff",
+		"editor.formatOnSave": true,
+		"editor.codeActionsOnSave": {
+			"source.fixAll.ruff": "explicit",
+			"source.organizeImports.ruff": "explicit"
+		}
+	},
+	// Правила ruff берутся из pyproject.toml, дублировать их в настройках
+	// редактора нельзя: разошедшись, они дадут «зелёно в редакторе, красно в
+	// гейте».
+	"ruff.importStrategy": "fromEnvironment",
+
+	// Проверка типов у Pylance выключена: типы в проекте проверяет mypy со
+	// strict и плагином pydantic, а второй анализатор со своими правилами
+	// подсвечивает то, чего гейт не считает ошибкой.
+	"python.analysis.typeCheckingMode": "off",
+
+	// Тесты — pytest; аргументы берутся из pyproject.toml.
+	"python.testing.pytestEnabled": true,
+	"python.testing.unittestEnabled": false,
+	"python.testing.pytestArgs": ["tests"],
+
+	"files.exclude": {
+		// Читает uv, руками не открывают.
+		".python-version": true,
+		"**/__pycache__": true,
+		"**/*.pyc": true,
+		"**/.venv": true,
+		"**/.mypy_cache": true,
+		"**/.ruff_cache": true,
+		"**/.pytest_cache": true,
+		"**/*.egg-info": true,
+		"**/build": true,
+		"**/dist": true
+	},
+
+	// Индексировать lock нечего: он машинный и на поиск по коду только шумит.
+	"search.exclude": {
+		"uv.lock": true
+	},
+
+	"files.watcherExclude": {
+		"**/.venv/**": true,
+		"**/__pycache__/**": true,
+		"**/.mypy_cache/**": true,
+		"**/.ruff_cache/**": true,
+		"**/.pytest_cache/**": true
+	},
+
+	// `.env` не подхватывается автоматически: переменные читает
+	// pydantic-settings тем же файлом, и второй загрузчик в отладке давал бы
+	// расхождение с рантаймом.
+	"python.envFile": "",
+
+	"editor.rulers": [120],
+	"files.insertFinalNewline": true,
+	"files.trimTrailingWhitespace": true
+}

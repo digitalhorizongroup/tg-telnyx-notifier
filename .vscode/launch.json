@@ -1,0 +1,30 @@
+{
+	"version": "0.2.0",
+	"configurations": [
+		{
+			// Запуск через `-m tgtn`, а не по файлу: так стартует и консольная
+			// команда, и контейнер — отладка идёт по тому же пути, что и рантайм.
+			"name": "tgtn: сервис",
+			"type": "debugpy",
+			"request": "launch",
+			"module": "tgtn",
+			"console": "integratedTerminal",
+			"justMyCode": true,
+			// Настройки читает pydantic-settings из `.env` в корне; отдельный
+			// envFile здесь не задаётся, иначе значений было бы два источника.
+			"cwd": "${workspaceFolder}"
+		},
+		{
+			"name": "tgtn: текущий тест",
+			"type": "debugpy",
+			"request": "launch",
+			"module": "pytest",
+			"args": ["${file}", "-vv"],
+			"console": "integratedTerminal",
+			// Свой код здесь не единственный интересный: падение часто уходит в
+			// pydantic или starlette, и без их кадров стек обрывается.
+			"justMyCode": false,
+			"cwd": "${workspaceFolder}"
+		}
+	]
+}

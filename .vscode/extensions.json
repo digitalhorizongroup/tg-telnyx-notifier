@@ -1,0 +1,12 @@
+{
+	// Что нужно, чтобы настройки из settings.json работали, а не молча
+	// игнорировались: без ruff нет ни форматирования, ни линта по сохранению.
+	"recommendations": [
+		"ms-python.python",
+		"ms-python.vscode-pylance",
+		"charliermarsh.ruff",
+		"ms-python.mypy-type-checker",
+		"tamasfe.even-better-toml",
+		"ms-azuretools.vscode-docker"
+	]
+}

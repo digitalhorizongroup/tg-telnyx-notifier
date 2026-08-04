@@ -46,8 +46,7 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2).read()" || exit 1
 
-# Адрес и порт — в CMD, а не в ENTRYPOINT: так `docker run … --port 9000`
-# переопределяет их, не повторяя имя приложения. `0.0.0.0` обязателен —
-# на `127.0.0.1` порт виден только изнутри контейнера.
-ENTRYPOINT ["uvicorn", "tgtn.app:app"]
-CMD ["--host", "0.0.0.0", "--port", "8000"]
+# Консольная команда из манифеста, а не `uvicorn` напрямую: сервер поднимает
+# `main()`, и там же выбирается цикл uvloop и ставится логирование. Адрес и порт
+# приходят переменными `TGTN_HOST`/`TGTN_PORT`, поэтому CMD пуст.
+ENTRYPOINT ["tgtn"]

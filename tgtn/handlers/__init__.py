@@ -3,4 +3,16 @@
 Граница пакета: модуль отсюда разбирает и валидирует то, что пришло снаружи, и
 зовёт отправку. Разговором с Telegram и с Telnyx занимается не он — обработчик
 остаётся проверяемым без сети.
+
+``ROUTERS`` — вся HTTP-поверхность сервиса. Приложение набирается из этого
+перечня (:func:`tgtn.__main__.create_app`), поэтому новый маршрут появляется
+снаружи ровно тогда, когда его маршрутизатор дописан сюда.
 """
+
+from fastapi import APIRouter
+
+from tgtn.handlers.health import router as health_router
+
+ROUTERS: tuple[APIRouter, ...] = (health_router,)
+
+__all__ = ["ROUTERS"]
