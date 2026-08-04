@@ -5,11 +5,11 @@ import pytest
 from aiogram.types import Chat, Message, User
 
 from tests.conftest import CHAT_ID, SettingsFactory
-from tgtn.core.outbox import Outbox
 from tgtn.core.schemas import Activity
-from tgtn.core.store import Counters, Store
-from tgtn.core.telegram import Telegram
 from tgtn.handlers.commands import allowed, collect, render
+from tgtn.modules.outbox import Outbox
+from tgtn.modules.store import Counters, Store
+from tgtn.modules.telegram import Telegram
 
 
 def message_from(chat_id: int, user_id: int | None = None) -> Message:

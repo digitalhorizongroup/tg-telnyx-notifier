@@ -12,7 +12,7 @@ from aiogram.exceptions import (
 from aiogram.methods import SendMessage
 
 from tests.conftest import CHAT_ID
-from tgtn.core.telegram import RejectedError, Telegram, UnavailableError
+from tgtn.modules.telegram import RejectedError, Telegram, UnavailableError
 
 METHOD = SendMessage(chat_id=CHAT_ID, text="проверка")
 

@@ -11,9 +11,9 @@ from aiogram import Bot, Dispatcher
 from fastapi import Depends, Request
 
 from tgtn.core.config import Settings
-from tgtn.core.outbox import Outbox
-from tgtn.core.store import Store
-from tgtn.core.telegram import Telegram
+from tgtn.modules.outbox import Outbox
+from tgtn.modules.store import Store
+from tgtn.modules.telegram import Telegram
 
 
 def get_settings(request: Request) -> Settings:

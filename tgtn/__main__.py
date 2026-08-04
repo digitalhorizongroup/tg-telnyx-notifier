@@ -5,17 +5,19 @@ from collections.abc import AsyncGenerator, Sequence
 from contextlib import asynccontextmanager
 
 import uvicorn
-from aiogram import Bot, Dispatcher
+from aiogram import Bot
 from fastapi import APIRouter, FastAPI
 
 from tgtn import __version__
 from tgtn.core.config import Settings, setup_logging
-from tgtn.core.outbox import Outbox
-from tgtn.core.store import Store
-from tgtn.core.telegram import Telegram
-from tgtn.handlers import ROUTERS, commands
+from tgtn.handlers import DISPATCHER, ROUTERS
+from tgtn.modules.outbox import Outbox
+from tgtn.modules.store import Store
+from tgtn.modules.telegram import DeliveryError, Telegram
 
 LOG = logging.getLogger(__name__)
+
+STARTUP_MESSAGE = "Я работаю"
 
 
 def create_app(settings: Settings, routers: Sequence[APIRouter] = ROUTERS) -> FastAPI:
@@ -28,7 +30,11 @@ def create_app(settings: Settings, routers: Sequence[APIRouter] = ROUTERS) -> Fa
             передаёт ровно те маршрутизаторы, которые проверяет, и получает
             приложение без чужих маршрутов.
     """
-    app = FastAPI(title="tg-telnyx-notifier", version=__version__, lifespan=lifespan)
+    app = FastAPI(
+        title="tg-telnyx-notifier",
+        version=__version__,
+        lifespan=lifespan,
+    )
     app.state.settings = settings
     for router in routers:
         app.include_router(router)
@@ -54,17 +60,19 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
     telegram = Telegram(bot, settings.chat_id)
     outbox = Outbox(store, telegram, settings.send_base_delay, settings.send_max_delay)
 
-    dispatcher = Dispatcher(settings=settings, store=store, outbox=outbox, telegram=telegram)
-    dispatcher.include_router(commands.build_router())
+    # `DISPATCHER` один на процесс (:mod:`tgtn.handlers`): новые запуски
+    # приложения обновляют его данные, а не создают диспетчер заново.
+    DISPATCHER.workflow_data.update(settings=settings, store=store, outbox=outbox, telegram=telegram)
 
     app.state.store = store
     app.state.bot = bot
     app.state.telegram = telegram
     app.state.outbox = outbox
-    app.state.dispatcher = dispatcher
+    app.state.dispatcher = DISPATCHER
 
     await outbox.start()
     await _register_webhook(settings, telegram)
+    await _announce_startup(telegram)
     LOG.info("очередь готова, база %s; удалено старых записей — %d", settings.database_path, purged)
 
     try:
@@ -89,6 +97,19 @@ async def _register_webhook(settings: Settings, telegram: Telegram) -> None:
         LOG.warning("TGTN_PUBLIC_URL не задан: команда активности недоступна, пересылка сообщений работает")
         return
     await telegram.register_webhook(url, settings.telegram_webhook_secret.get_secret_value())
+
+
+async def _announce_startup(telegram: Telegram) -> None:
+    """Отправить в канал признак живого старта.
+
+    Отказ не роняет подъём сервиса: Telnyx не станет ждать, пока Telegram
+    станет доступен, а приветственное сообщение не входит в контракт, который
+    обязан выполниться до первого запроса.
+    """
+    try:
+        await telegram.send(STARTUP_MESSAGE)
+    except DeliveryError:
+        LOG.warning("сообщение о старте не отправлено", exc_info=True)
 
 
 def main() -> None:

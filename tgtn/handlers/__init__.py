@@ -8,17 +8,28 @@
 перечня (:func:`tgtn.__main__.create_app`), поэтому новый маршрут появляется
 снаружи ровно тогда, когда его маршрутизатор дописан сюда.
 
-Команды бота (:mod:`tgtn.handlers.commands`) сюда не входят: их разбирает не
-FastAPI, а диспетчер aiogram, которому апдейт передаёт
-:mod:`tgtn.handlers.telegram`.
+Команды бота (:mod:`tgtn.handlers.commands`) сюда не входят маршрутом: их
+разбирает не FastAPI, а ``DISPATCHER`` — диспетчер aiogram, которому апдейт
+передаёт :mod:`tgtn.handlers.telegram`. Диспетчер один на процесс, а не на
+приложение: aiogram запрещает подключать один и тот же ``Router`` к двум
+``Dispatcher``, и командный маршрутизатор регистрируется здесь один раз при
+импорте. Настройки, хранилище, воркер и канал доставки лифспан
+(:func:`tgtn.__main__.lifespan`) кладёт в ``DISPATCHER.workflow_data`` заново
+на каждом подъёме — сам диспетчер и подключённые к нему маршрутизаторы не
+пересоздаются.
 """
 
+from aiogram import Dispatcher
 from fastapi import APIRouter
 
+from tgtn.handlers.commands import router as commands_router
 from tgtn.handlers.health import router as health_router
 from tgtn.handlers.notification import router as notification_router
 from tgtn.handlers.telegram import router as telegram_router
 
 ROUTERS: tuple[APIRouter, ...] = (health_router, notification_router, telegram_router)
 
-__all__ = ["ROUTERS"]
+DISPATCHER = Dispatcher()
+DISPATCHER.include_router(commands_router)
+
+__all__ = ["DISPATCHER", "ROUTERS"]

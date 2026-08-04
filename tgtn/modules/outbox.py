@@ -18,8 +18,8 @@ import asyncio
 import contextlib
 import logging
 
-from tgtn.core.store import Pending, Store
-from tgtn.core.telegram import RejectedError, Telegram, UnavailableError
+from tgtn.modules.store import Pending, Store
+from tgtn.modules.telegram import RejectedError, Telegram, UnavailableError
 
 LOG = logging.getLogger(__name__)
 

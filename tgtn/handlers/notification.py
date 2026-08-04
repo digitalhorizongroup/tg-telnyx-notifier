@@ -14,9 +14,9 @@ import logging
 
 from fastapi import APIRouter, status
 
+from tgtn.core.deps import OutboxDep, StoreDep
 from tgtn.core.schemas import INBOUND_DIRECTION, INBOUND_EVENT, Webhook
-from tgtn.core.store import Incoming
-from tgtn.handlers.deps import OutboxDep, StoreDep
+from tgtn.modules.store import Incoming
 
 LOG = logging.getLogger(__name__)
 

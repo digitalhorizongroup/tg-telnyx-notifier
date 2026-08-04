@@ -5,10 +5,10 @@ import pytest
 from fastapi.testclient import TestClient
 
 from tests.conftest import SettingsFactory, webhook_body
-from tgtn.__main__ import create_app
-from tgtn.core.outbox import Outbox
-from tgtn.core.store import Store
-from tgtn.core.telegram import Telegram, UnavailableError
+from tgtn.__main__ import STARTUP_MESSAGE, create_app
+from tgtn.modules.outbox import Outbox
+from tgtn.modules.store import Store
+from tgtn.modules.telegram import Telegram, UnavailableError
 
 # Сквозные проверки гоняют настоящую очередь на настоящем SQLite; ожидание
 # сокращено до миллисекунд, чтобы прогон не упирался в паузу воркера.
@@ -57,15 +57,15 @@ def test_message_travels_from_webhook_to_telegram(
     settings = make_settings(data_dir=tmp_path, **FAST)
     app = create_app(settings)
 
-    # Act
+    # Act: старт уже шлёт в канал приветствие, реальное сообщение приходит вторым.
     with TestClient(app) as client:
         accepted = client.post("/notification", json=webhook_body())
-        delivered = wait_for(lambda: bool(posted))
+        delivered = wait_for(lambda: len(posted) >= 2)
 
     # Assert
     assert accepted.status_code == 202
     assert delivered is True
-    assert posted == ["+15551110000 → +15552220000\nкод 1234"]
+    assert posted == [STARTUP_MESSAGE, "+15551110000 → +15552220000\nкод 1234"]
 
 
 def test_undelivered_message_stays_in_the_queue_after_a_restart(
@@ -82,10 +82,11 @@ def test_undelivered_message_stays_in_the_queue_after_a_restart(
     monkeypatch.setattr(Telegram, "send", refuse)
     settings = make_settings(data_dir=tmp_path, **FAST)
 
-    # Act: сообщение принято и не доставлено, процесс остановлен.
+    # Act: приветствие при старте уже провалилось, дожидаемся попытки и с реальным
+    # сообщением — процесс останавливается прежде, чем оно доставлено.
     with TestClient(create_app(settings)) as client:
         client.post("/notification", json=webhook_body())
-        wait_for(lambda: bool(attempts))
+        wait_for(lambda: len(attempts) >= 2)
 
     # Assert: очередь пережила остановку и ждёт в базе.
     posted: list[str] = []
@@ -95,10 +96,10 @@ def test_undelivered_message_stays_in_the_queue_after_a_restart(
 
     monkeypatch.setattr(Telegram, "send", accept)
     with TestClient(create_app(settings)):
-        delivered = wait_for(lambda: bool(posted))
+        delivered = wait_for(lambda: len(posted) >= 2)
 
     assert delivered is True
-    assert posted == ["+15551110000 → +15552220000\nкод 1234"]
+    assert posted == [STARTUP_MESSAGE, "+15551110000 → +15552220000\nкод 1234"]
 
 
 def test_repeated_webhook_delivers_the_message_once(
@@ -117,10 +118,10 @@ def test_repeated_webhook_delivers_the_message_once(
     with TestClient(create_app(settings)) as client:
         first = client.post("/notification", json=webhook_body())
         second = client.post("/failure", json=webhook_body())
-        wait_for(lambda: bool(posted))
+        wait_for(lambda: len(posted) >= 2)
         time.sleep(0.1)
 
-    # Assert
+    # Assert: приветствие при старте плюс ровно одна доставка события, без дубля.
     assert first.json() == {"status": "queued"}
     assert second.json() == {"status": "duplicate"}
-    assert len(posted) == 1
+    assert len(posted) == 2

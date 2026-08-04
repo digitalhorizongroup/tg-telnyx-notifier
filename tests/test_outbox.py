@@ -4,9 +4,9 @@ from typing import cast
 
 import pytest
 
-from tgtn.core.outbox import Outbox
-from tgtn.core.store import Pending, Store
-from tgtn.core.telegram import RejectedError, Telegram, UnavailableError
+from tgtn.modules.outbox import Outbox
+from tgtn.modules.store import Pending, Store
+from tgtn.modules.telegram import RejectedError, Telegram, UnavailableError
 
 # Реальные паузы, только мелкие: шкала проверяется на тех же вычислениях, что и
 # в рантайме, а прогон остаётся быстрым. Подмена asyncio.sleep проверяла бы

@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from tgtn.core.store import Incoming, Store
+from tgtn.modules.store import Incoming, Store
 
 
 def incoming(event_id: str = "evt-1", **overrides: object) -> Incoming:
@@ -123,14 +123,33 @@ async def test_queue_keeps_arrival_order(db_path: Path) -> None:
 
 
 @pytest.mark.asyncio
-async def test_purge_removes_old_history_but_never_the_queue(db_path: Path) -> None:
+async def test_sent_message_is_removed_immediately_regardless_of_retention(db_path: Path) -> None:
+    async with Store(db_path) as store:
+        # Arrange: сообщение принято давно — историю отправленных purge не трогает,
+        # об этом заботится сама mark_sent.
+        long_ago = datetime.now(UTC) - timedelta(days=90)
+        await store.enqueue(incoming("evt-old", received_at=long_ago))
+        old = await store.head()
+        assert old is not None
+
+        # Act
+        await store.mark_sent(old.row_id)
+
+        # Assert
+        removed = await store.purge(history_days=30)
+        assert removed == 0
+        assert await store.has_pending() is False
+
+
+@pytest.mark.asyncio
+async def test_purge_removes_old_failures_but_never_the_queue(db_path: Path) -> None:
     async with Store(db_path) as store:
         # Arrange
         long_ago = datetime.now(UTC) - timedelta(days=90)
         await store.enqueue(incoming("evt-old", received_at=long_ago))
         old = await store.head()
         assert old is not None
-        await store.mark_sent(old.row_id)
+        await store.mark_failed(old.row_id, "chat not found")
         await store.enqueue(incoming("evt-waiting", received_at=long_ago))
 
         # Act
@@ -148,7 +167,7 @@ async def test_purge_is_disabled_by_a_non_positive_retention(db_path: Path) -> N
         await store.enqueue(incoming("evt-old", received_at=datetime.now(UTC) - timedelta(days=90)))
         head = await store.head()
         assert head is not None
-        await store.mark_sent(head.row_id)
+        await store.mark_failed(head.row_id, "chat not found")
 
         # Act
         removed = await store.purge(history_days=0)

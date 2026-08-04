@@ -13,7 +13,7 @@ from aiogram.types import Update
 from fastapi import APIRouter, Header, HTTPException, Request, Response, status
 
 from tgtn.core.config import TELEGRAM_WEBHOOK_PATH
-from tgtn.handlers.deps import BotDep, DispatcherDep, SettingsDep
+from tgtn.core.deps import BotDep, DispatcherDep, SettingsDep
 
 LOG = logging.getLogger(__name__)
 

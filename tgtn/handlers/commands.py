@@ -1,9 +1,9 @@
 """Команды бота: сводка активности.
 
-Зависимости приезжают именованными аргументами — их кладёт диспетчер, которому
-их передали при сборке (:func:`tgtn.__main__.create_app`). Обработчик ничего не
-создаёт сам и потому проверяется без сети: в тесте те же аргументы передаются
-напрямую.
+Зависимости приезжают именованными аргументами — их кладёт диспетчер из
+``DISPATCHER.workflow_data`` (:func:`tgtn.__main__.lifespan`). Обработчик
+ничего не создаёт сам и потому проверяется без сети: в тесте те же аргументы
+передаются напрямую.
 """
 
 import logging
@@ -13,14 +13,16 @@ from aiogram.filters import Command
 from aiogram.types import Message
 
 from tgtn.core.config import Settings
-from tgtn.core.outbox import Outbox
 from tgtn.core.schemas import Activity
-from tgtn.core.store import Store
-from tgtn.core.telegram import Telegram
+from tgtn.modules.outbox import Outbox
+from tgtn.modules.store import Store
+from tgtn.modules.telegram import Telegram
 
 LOG = logging.getLogger(__name__)
 
 COMMAND = "activity"
+
+router = Router(name="commands")
 
 
 def allowed(message: Message, settings: Settings) -> bool:
@@ -65,6 +67,8 @@ async def collect(store: Store, outbox: Outbox, telegram: Telegram) -> Activity:
     )
 
 
+@router.message(Command(COMMAND))
+@router.channel_post(Command(COMMAND))
 async def activity(
     message: Message,
     settings: Settings,
@@ -84,17 +88,4 @@ async def activity(
     await message.answer(render(report), parse_mode=None)
 
 
-def build_router() -> Router:
-    """Собрать маршрутизатор команд заново.
-
-    Новый экземпляр на каждый вызов, а не модульный синглтон: aiogram запрещает
-    подключать один и тот же ``Router`` к двум ``Dispatcher`` подряд, а второй
-    подъём приложения в том же процессе — обычный случай в тестах.
-    """
-    router = Router(name="commands")
-    router.message(Command(COMMAND))(activity)
-    router.channel_post(Command(COMMAND))(activity)
-    return router
-
-
-__all__ = ["COMMAND", "activity", "allowed", "build_router", "collect", "render"]
+__all__ = ["COMMAND", "activity", "allowed", "collect", "render", "router"]

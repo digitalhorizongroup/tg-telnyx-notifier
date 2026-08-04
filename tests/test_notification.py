@@ -6,9 +6,9 @@ from fastapi.testclient import TestClient
 from tests.conftest import EVENT_ID, webhook_body
 from tgtn.__main__ import create_app
 from tgtn.core.config import Settings
-from tgtn.core.outbox import Outbox
-from tgtn.core.store import Incoming, Store
 from tgtn.handlers.notification import router as notification_router
+from tgtn.modules.outbox import Outbox
+from tgtn.modules.store import Incoming, Store
 
 
 class FakeStore:
