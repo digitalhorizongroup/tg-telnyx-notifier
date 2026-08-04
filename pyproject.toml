@@ -5,7 +5,7 @@ name = "tg-telnyx-notifier"
 # (`[tool.setuptools.dynamic]` ниже). Так значение существует в одном месте, и
 # рантайм читает ровно то, что попало в метаданные дистрибутива.
 dynamic = ["version"]
-description = "Приём сообщений с номеров Telnyx и пересылка их в Telegram-канал"
+description = "Self-hosted Telnyx SMS/MMS to Telegram notifier with FastAPI and SQLite"
 readme = "README.md"
 license = "MIT"
 keywords = ["telnyx", "telegram", "sms", "mms", "webhook", "fastapi", "notifier"]
