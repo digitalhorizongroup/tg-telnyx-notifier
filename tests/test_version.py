@@ -1,8 +1,8 @@
 import re
 from importlib import metadata
 
-import tg_telnyx_notifier
-from tg_telnyx_notifier import _version
+import tgtn
+from tgtn import _version
 
 DISTRIBUTION = "tg-telnyx-notifier"
 
@@ -25,7 +25,7 @@ def test_distribution_metadata_is_built_from_the_code_variable() -> None:
 
 
 def test_package_reexports_version_from_the_version_module() -> None:
-    assert tg_telnyx_notifier.__version__ is _version.__version__
+    assert tgtn.__version__ is _version.__version__
 
 
 def test_version_literal_is_valid_pep_440() -> None:

@@ -21,7 +21,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # Слой кода. `--no-editable`: пакет копируется в venv целиком, и рантайм-образу
 # не нужно дерево исходников. `--frozen` запрещает молчаливое обновление
 # lock-файла — состав образа совпадает с зафиксированным в репозитории.
-COPY tg_telnyx_notifier ./tg_telnyx_notifier
+COPY tgtn ./tgtn
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev --no-editable
 
@@ -49,5 +49,5 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
 # Адрес и порт — в CMD, а не в ENTRYPOINT: так `docker run … --port 9000`
 # переопределяет их, не повторяя имя приложения. `0.0.0.0` обязателен —
 # на `127.0.0.1` порт виден только изнутри контейнера.
-ENTRYPOINT ["uvicorn", "tg_telnyx_notifier.app:app"]
+ENTRYPOINT ["uvicorn", "tgtn.app:app"]
 CMD ["--host", "0.0.0.0", "--port", "8000"]

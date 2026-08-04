@@ -1,7 +1,7 @@
 [project]
 name = "tg-telnyx-notifier"
 # Версия не записана здесь: её держит переменная `__version__` в
-# `tg_telnyx_notifier/_version.py`, а setuptools подставляет её при сборке
+# `tgtn/_version.py`, а setuptools подставляет её при сборке
 # (`[tool.setuptools.dynamic]` ниже). Так значение существует в одном месте, и
 # рантайм читает ровно то, что попало в метаданные дистрибутива.
 dynamic = ["version"]
@@ -27,22 +27,22 @@ build-backend = "setuptools.build_meta"
 
 # Путь ведёт в `_version`, а не в пакет целиком: по модулю без импортов
 # setuptools берёт литерал статически, разбором синтаксического дерева. Через
-# `tg_telnyx_notifier.__version__` он импортировал бы пакет при сборке, а с ним
+# `tgtn.__version__` он импортировал бы пакет при сборке, а с ним
 # aiogram и fastapi — которых в изолированной среде сборки нет.
 [tool.setuptools.dynamic]
-version = { attr = "tg_telnyx_notifier._version.__version__" }
+version = { attr = "tgtn._version.__version__" }
 
 # Плоская раскладка: пакет лежит прямо в корне, отдельного `src/` нет.
 # `include` обязателен — автопоиск от корня иначе считает пакетом любой каталог
 # с `__init__.py` и молча кладёт в дистрибутив `tests`.
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["tg_telnyx_notifier*"]
+include = ["tgtn*"]
 
 # Маркер `py.typed` попадает в дистрибутив, иначе mypy у потребителя не увидит
 # аннотаций установленного пакета.
 [tool.setuptools.package-data]
-tg_telnyx_notifier = ["py.typed"]
+tgtn = ["py.typed"]
 
 # `httpx2`, а не `httpx`: `TestClient` starlette 1.3 построен на нём, а импорт
 # `httpx` там объявлен устаревшим и печатает DeprecationWarning.
@@ -67,7 +67,7 @@ addopts = "-q --strict-markers --import-mode=importlib"
 asyncio_mode = "strict"
 
 [tool.coverage.run]
-source = ["tg_telnyx_notifier"]
+source = ["tgtn"]
 # Ветки считаются отдельно: у маршрутизации по номеру основная ошибка — не
 # непройденная строка, а непройденное направление `if`.
 branch = true
@@ -146,8 +146,14 @@ extend-immutable-calls = [
 # (докстринг на каждый тест). `PLR2004` снят там же — ожидаемый код ответа
 # пишется числом прямо в проверке, именованная константа рядом с ним ничего не
 # объясняет.
+#
+# `S105`/`S106` — про «зашитый пароль»: в наборе есть заведомо поддельный токен,
+# и он обязан быть виден прямо в тесте, иначе неясно, что именно не должно
+# утечь в `repr`. `B010` — про `setattr` с постоянным именем поля: прямое
+# присваивание во frozen-модель отвергает уже mypy, а проверяется здесь
+# рантайм-запрет, поэтому обойти статику — часть самой проверки.
 [tool.ruff.lint.per-file-ignores]
-"**/tests/**" = ["S101", "PLR2004", "ARG", "D"]
+"**/tests/**" = ["S101", "S105", "S106", "B010", "PLR2004", "ARG", "D"]
 
 [tool.mypy]
 # Плагин обязателен: `__init__` модели pydantic синтезируется в рантайме по
@@ -158,7 +164,7 @@ python_version = "3.13"
 
 # Явный список вместо `mypy .`: иначе в проверку затягивается `.venv` со
 # сторонними пакетами, и вердикт перестаёт быть про наш код.
-files = ["tg_telnyx_notifier", "tests"]
+files = ["tgtn", "tests"]
 exclude = "(^|/)(\\.venv|build|dist|.*\\.egg-info)/"
 
 # У `tests` нет `__init__.py`, и без этого имя модуля выводится не от корня

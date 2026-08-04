@@ -1,7 +1,7 @@
 from fastapi.testclient import TestClient
 
-from tg_telnyx_notifier import __version__
-from tg_telnyx_notifier.app import app
+from tgtn import __version__
+from tgtn.app import app
 
 client = TestClient(app)
 

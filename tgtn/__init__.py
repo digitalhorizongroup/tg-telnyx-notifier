@@ -5,10 +5,10 @@ webhook о входящем сообщении, и Telegram-выход, куда
 постом в канал. Номеров у входа несколько, канал один — отправитель различается
 содержимым поста, а не адресом доставки.
 
-Версия объявлена в :mod:`tg_telnyx_notifier._version` и реэкспортируется здесь,
-чтобы рантайму было достаточно ``tg_telnyx_notifier.__version__``.
+Версия объявлена в :mod:`tgtn._version` и реэкспортируется здесь,
+чтобы рантайму было достаточно ``tgtn.__version__``.
 """
 
-from tg_telnyx_notifier._version import __version__
+from tgtn._version import __version__
 
 __all__ = ["__version__"]
