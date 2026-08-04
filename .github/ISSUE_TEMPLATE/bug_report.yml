@@ -1,0 +1,33 @@
+name: Отчёт об ошибке
+description: Воспроизводимая ошибка tg-telnyx-notifier
+title: "bug: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Не публикуйте токены, webhook-секреты, номера или тексты сообщений.
+  - type: input
+    id: version
+    attributes:
+      label: Версия из GET /health
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Фактическое и ожидаемое поведение
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Шаги воспроизведения
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Проверка
+      options:
+        - label: Я удалил токены, секреты и персональные данны.
+          required: true

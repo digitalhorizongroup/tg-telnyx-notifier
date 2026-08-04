@@ -6,6 +6,8 @@ name = "tg-telnyx-notifier"
 # рантайм читает ровно то, что попало в метаданные дистрибутива.
 dynamic = ["version"]
 description = "Приём сообщений с номеров Telnyx и пересылка их в Telegram-канал"
+readme = "README.md"
+keywords = ["telnyx", "telegram", "sms", "mms", "webhook", "fastapi", "notifier"]
 requires-python = ">=3.13"
 # Один процесс держит оба конца маршрута: FastAPI принимает webhook Telnyx о
 # входящем сообщении, aiogram постит его в канал. Номеров на входе несколько,
@@ -22,6 +24,10 @@ dependencies = [
     "uvicorn>=0.52.1",
     "uvloop>=0.22.1",
 ]
+
+[project.urls]
+Repository = "https://github.com/digitalhorizongroup/tg-telnyx-notifier"
+Issues = "https://github.com/digitalhorizongroup/tg-telnyx-notifier/issues"
 
 # Запуск — консольная команда и `python -m tgtn` разом: обе ведут в `main()`
 # того же модуля, отдельного скрипта-лаунчера в проекте нет.
