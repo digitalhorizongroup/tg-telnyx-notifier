@@ -2,19 +2,12 @@ import pytest
 import uvicorn
 from fastapi.testclient import TestClient
 
+from tests.conftest import CHAT_ID, SECRET, TOKEN
 from tgtn import __version__
 from tgtn.__main__ import create_app, main
 from tgtn.core.config import Settings
 from tgtn.handlers import ROUTERS
 from tgtn.handlers.health import router as health_router
-
-TOKEN = "111:AAAfake-token-for-tests"
-CHAT_ID = -1001234567890
-
-
-@pytest.fixture
-def settings() -> Settings:
-    return Settings.model_validate({"bot_token": TOKEN, "chat_id": CHAT_ID})
 
 
 @pytest.fixture
@@ -63,6 +56,7 @@ def test_main_serves_on_uvloop_with_the_configured_address(monkeypatch: pytest.M
     # Arrange
     monkeypatch.setenv("TGTN_BOT_TOKEN", TOKEN)
     monkeypatch.setenv("TGTN_CHAT_ID", str(CHAT_ID))
+    monkeypatch.setenv("TGTN_TELEGRAM_WEBHOOK_SECRET", SECRET)
     monkeypatch.setenv("TGTN_HOST", "127.0.0.1")
     monkeypatch.setenv("TGTN_PORT", "9001")
     captured: dict[str, object] = {}

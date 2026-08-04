@@ -5,6 +5,8 @@
 приходят из окружения, а не из запроса, и живут в :mod:`tgtn.core.config`.
 """
 
+from tgtn.core.schemas.activity import Activity
 from tgtn.core.schemas.health import Health
+from tgtn.core.schemas.telnyx import INBOUND_DIRECTION, INBOUND_EVENT, InboundMessage, Webhook
 
-__all__ = ["Health"]
+__all__ = ["INBOUND_DIRECTION", "INBOUND_EVENT", "Activity", "Health", "InboundMessage", "Webhook"]

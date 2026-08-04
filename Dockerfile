@@ -37,9 +37,17 @@ COPY --from=builder /app/.venv /app/.venv
 ENV PATH="/app/.venv/bin:$PATH" \
     PYTHONUNBUFFERED=1
 
-# Процесс не root: запись в образ ему не нужна, наружу торчит только порт.
-RUN useradd --create-home --uid 1000 app
+# Процесс не root. Каталог данных заводится и отдаётся ему заранее: том
+# монтируется сюда, и без владельца очередь в нём не создастся.
+RUN useradd --create-home --uid 1000 app \
+    && mkdir -p /app/data \
+    && chown app:app /app/data
 USER app
+
+# База очереди переживает пересоздание контейнера только на томе: без него
+# принятые, но не отправленные сообщения уходят вместе со слоем.
+VOLUME ["/app/data"]
+ENV TGTN_DATA_DIR=/app/data
 
 EXPOSE 8000
 

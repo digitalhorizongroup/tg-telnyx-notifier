@@ -10,12 +10,32 @@
 процесса, увидевшей новое значение, с половиной, оставшейся на старом.
 """
 
-from typing import Literal, Self
+from functools import cached_property
+from pathlib import Path
+from typing import Annotated, Literal, Self
 
-from pydantic import SecretStr
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import BeforeValidator, SecretStr
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 type LogLevel = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+
+
+def _split_ids(value: object) -> object:
+    """Разобрать список идентификаторов, записанный через запятую.
+
+    В ``.env`` строка ``1,2`` читается человеком лучше, чем JSON-массив, а
+    pydantic без этого ждёт именно JSON. Значение не-строка уходит дальше как
+    есть: так же поле задаётся напрямую в тестах.
+    """
+    if isinstance(value, str):
+        return [chunk.strip() for chunk in value.split(",") if chunk.strip()]
+    return value
+
+
+# `NoDecode` обязателен: множество — составной тип, и без него pydantic-settings
+# разбирает значение переменной как JSON ещё до валидаторов. Пустая строка и
+# `1,2` на этом разборе падают, не доходя до `_split_ids`.
+type AdminIds = Annotated[frozenset[int], NoDecode, BeforeValidator(_split_ids)]
 
 
 class Settings(BaseSettings):
@@ -29,6 +49,21 @@ class Settings(BaseSettings):
         chat_id: Куда уходят сообщения. Числовой идентификатор, а не ``@имя``:
             у канала имя может смениться, идентификатор — нет. У каналов и
             супергрупп он отрицательный, у личной переписки положительный.
+        admin_ids: Кому кроме канала отвечает команда активности. Пустое
+            множество — команда работает только в самом канале.
+        public_url: Внешний адрес сервиса без завершающего слэша; по нему
+            Telegram доставляет апдейты. ``None`` — webhook не регистрируется, и
+            команда активности недоступна: локально внешнего адреса нет.
+        telegram_webhook_secret: Общий секрет с Telegram. Уходит в ``setWebhook``
+            и приезжает обратно заголовком ``X-Telegram-Bot-Api-Secret-Token``:
+            маршрут апдейтов открыт наружу, и это единственное, что отличает
+            Telegram от постороннего.
+        data_dir: Каталог рантайм-данных. В контейнере — точка монтирования
+            тома, поэтому настраивается, а не вычисляется.
+        history_days: Сколько суток доставленные сообщения лежат в базе.
+            Отправленное старше этого срока удаляется на старте.
+        send_base_delay: Пауза между отправками, когда очередь спокойна.
+        send_max_delay: Потолок паузы при непрерывном наплыве.
         host: Адрес привязки HTTP-сервера. ``0.0.0.0`` — в контейнере свой адрес
             заранее неизвестен, а ``127.0.0.1`` закрыл бы порт вместе с внешним
             миром и от того, кто пробрасывает webhook.
@@ -53,6 +88,16 @@ class Settings(BaseSettings):
 
     bot_token: SecretStr
     chat_id: int
+    admin_ids: AdminIds = frozenset()
+
+    public_url: str | None = None
+    telegram_webhook_secret: SecretStr
+
+    data_dir: Path = Path(".project")
+    history_days: int = 30
+
+    send_base_delay: float = 5.0
+    send_max_delay: float = 30.0
 
     host: str = "0.0.0.0"
     port: int = 8000
@@ -69,11 +114,26 @@ class Settings(BaseSettings):
         аргументы, которых при чтении из окружения не передают.
 
         Raises:
-            ValidationError: Если ``TGTN_BOT_TOKEN`` или ``TGTN_CHAT_ID`` не
-                заданы ни в окружении, ни в ``.env``. Падение на старте, а не
-                отказ на первом же сообщении.
+            ValidationError: Если обязательное значение не задано ни в
+                окружении, ни в ``.env``. Падение на старте, а не отказ на
+                первом же сообщении.
         """
         return cls.model_validate({})
 
+    @cached_property
+    def database_path(self) -> Path:
+        """Файл базы очереди; каталог заводится при первом обращении."""
+        self.data_dir.mkdir(exist_ok=True, parents=True)
+        return self.data_dir / "tgtn.sqlite3"
 
-__all__ = ["LogLevel", "Settings"]
+    @cached_property
+    def telegram_webhook_url(self) -> str | None:
+        """Полный адрес маршрута апдейтов или ``None``, если внешний адрес не задан."""
+        if self.public_url is None:
+            return None
+        return f"{self.public_url.rstrip('/')}{TELEGRAM_WEBHOOK_PATH}"
+
+
+TELEGRAM_WEBHOOK_PATH = "/telegram/updates"
+
+__all__ = ["TELEGRAM_WEBHOOK_PATH", "AdminIds", "LogLevel", "Settings"]
