@@ -1,5 +1,8 @@
 # Telnyx SMS/MMS to Telegram Notifier
 
+[![Python 3.13+](https://img.shields.io/badge/Python-3.13%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
 [Telegram](https://t.me/digitalhorizongroup) · [Discord](https://discord.com/invite/fjqzSYCETC)
 
 Self-hosted Python-сервис для пересылки входящих Telnyx SMS и MMS в Telegram-канал.
@@ -15,7 +18,7 @@ FastAPI принимает Telnyx webhooks, SQLite сохраняет надёж
 ```
 Telnyx ──webhook──▶ /notification, /failure ──▶ очередь (SQLite) ──▶ Telegram-канал
                                                      ▲
-Telegram ──apdejt──▶ /telegram/updates ─────────────┘  (команда /activity)
+Telegram ──update──▶ /telegram/updates ─────────────┘  (команда /activity)
 ```
 
 - **Приём.** Telnyx шлёт webhook на `/notification` (основной адрес профиля) и
@@ -88,7 +91,7 @@ curl http://localhost:8000/health
 ```
 
 ```json
-{"status":"ok","version":"0.4.1"}
+{"status":"ok","version":"0.4.3"}
 ```
 
 Входящее `message.received` с направлением `inbound` получает ответ `202 Accepted` со
