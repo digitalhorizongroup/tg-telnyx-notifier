@@ -1,0 +1,23 @@
+# Python / uv
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+dist/
+build/
+*.egg-info/
+
+# Замеры покрытия: файл данных и отчёты. Отчёт собирают руками
+# (`uv run pytest --cov`), в репозитории ему делать нечего.
+.coverage
+.coverage.*
+htmlcov/
+
+# Токен бота, ключ API Telnyx и секрет подписи webhook живут в окружении.
+.env
+.env.*
+
+# uv.lock коммитим: он фиксирует разрешённые версии, и образ собирается
+# `uv sync --frozen` ровно по нему.

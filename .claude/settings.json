@@ -1,0 +1,22 @@
+{
+  "$schema_note": "https://json.schemastore.org/claude-code-settings.json",
+  "model": "claude-sonnet-5",
+  "env": {
+    "MAX_THINKING_TOKENS": "10000",
+    "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "70",
+    "ANTHROPIC_SMALL_FAST_MODEL": "claude-haiku-4-5",
+    "PYTHONDONTWRITEBYTECODE": "1"
+  },
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:code.claude.com)",
+      "WebFetch(domain:developers.telnyx.com)",
+      "WebFetch(domain:docs.pydantic.dev)",
+      "WebFetch(domain:ai.pydantic.dev)",
+      "WebFetch(domain:pydantic.dev)",
+      "WebFetch(domain:docs.astral.sh)",
+      "Bash(uv *)",
+      "Bash(uvx *)"
+    ]
+  }
+}

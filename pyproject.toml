@@ -1,0 +1,191 @@
+[project]
+name = "tg-telnyx-notifier"
+# Версия не записана здесь: её держит переменная `__version__` в
+# `tg_telnyx_notifier/_version.py`, а setuptools подставляет её при сборке
+# (`[tool.setuptools.dynamic]` ниже). Так значение существует в одном месте, и
+# рантайм читает ровно то, что попало в метаданные дистрибутива.
+dynamic = ["version"]
+description = "Приём сообщений с номеров Telnyx и пересылка их в Telegram-канал"
+requires-python = ">=3.13"
+# Один процесс держит оба конца маршрута: FastAPI принимает webhook Telnyx о
+# входящем сообщении, aiogram постит его в канал. Номеров на входе несколько,
+# канал один.
+dependencies = [
+    "aiogram>=3.30.0",
+    "fastapi>=0.141.1",
+    "pydantic-settings>=2.14.2",
+    # ASGI-сервер, которым поднимается приложение FastAPI: сам FastAPI сервера
+    # не содержит и без него не слушает порт. Голый `uvicorn`, а не
+    # `uvicorn[standard]`: тот тянет watchfiles, httptools, PyYAML и
+    # python-dotenv — нужные для авто-перезапуска, а не для приёма webhook.
+    "uvicorn>=0.52.1",
+]
+
+[build-system]
+requires = ["setuptools>=83.0.0"]
+build-backend = "setuptools.build_meta"
+
+# Путь ведёт в `_version`, а не в пакет целиком: по модулю без импортов
+# setuptools берёт литерал статически, разбором синтаксического дерева. Через
+# `tg_telnyx_notifier.__version__` он импортировал бы пакет при сборке, а с ним
+# aiogram и fastapi — которых в изолированной среде сборки нет.
+[tool.setuptools.dynamic]
+version = { attr = "tg_telnyx_notifier._version.__version__" }
+
+# Плоская раскладка: пакет лежит прямо в корне, отдельного `src/` нет.
+# `include` обязателен — автопоиск от корня иначе считает пакетом любой каталог
+# с `__init__.py` и молча кладёт в дистрибутив `tests`.
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["tg_telnyx_notifier*"]
+
+# Маркер `py.typed` попадает в дистрибутив, иначе mypy у потребителя не увидит
+# аннотаций установленного пакета.
+[tool.setuptools.package-data]
+tg_telnyx_notifier = ["py.typed"]
+
+# `httpx2`, а не `httpx`: `TestClient` starlette 1.3 построен на нём, а импорт
+# `httpx` там объявлен устаревшим и печатает DeprecationWarning.
+[dependency-groups]
+dev = [
+    "httpx2>=2.9.1",
+    "mypy>=2.3.0",
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
+    "pytest-cov>=7.1.0",
+    "ruff>=0.16.1",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# `--import-mode=importlib` — чтобы файлам тестов не требовался `__init__.py` и
+# каталог не превращался в пакет ради одного лишь импорта.
+addopts = "-q --strict-markers --import-mode=importlib"
+# Асинхронный тест помечается явно (`@pytest.mark.asyncio`), а не опознаётся по
+# сигнатуре: при `auto` забытый `await` внутри синхронного теста молча проходит
+# как успешный — корутина создаётся и не запускается.
+asyncio_mode = "strict"
+
+[tool.coverage.run]
+source = ["tg_telnyx_notifier"]
+# Ветки считаются отдельно: у маршрутизации по номеру основная ошибка — не
+# непройденная строка, а непройденное направление `if`.
+branch = true
+
+[tool.ruff]
+target-version = "py313"
+# 120: на большей ширине `ruff format` начинает склеивать уже написанные
+# переносы в аргументах хендлеров.
+line-length = 120
+
+[tool.ruff.format]
+quote-style = "double"
+docstring-code-format = true
+
+# `TC` (flake8-type-checking) в `select` не входит намеренно. Он уносит импорты,
+# нужные только для типов, под `if TYPE_CHECKING:` — а здесь аннотации читают в
+# рантайме и pydantic, и FastAPI, который по ним строит схему запроса. Включать
+# его можно только вместе с `runtime-evaluated-base-classes`,
+# `runtime-evaluated-decorators` и `quote-annotations`, иначе модели молча
+# перестают собираться.
+[tool.ruff.lint]
+select = [
+    "E", "W",    # pycodestyle
+    "F",         # pyflakes
+    "I",         # isort
+    "N",         # pep8-naming
+    "UP",        # pyupgrade
+    "B",         # flake8-bugbear
+    "C4",        # flake8-comprehensions
+    "SIM",       # flake8-simplify
+    "RET",       # flake8-return
+    "TRY",       # tryceratops
+    "RUF",       # ruff-specific
+    "ASYNC",     # flake8-async
+    "DTZ",       # flake8-datetimez
+    "S",         # flake8-bandit
+    "ARG",       # flake8-unused-arguments
+    "PIE",       # flake8-pie
+    "PT",        # flake8-pytest-style
+    "TID",       # flake8-tidy-imports
+    "PERF",      # perflint
+    "FURB",      # refurb
+    "PL",        # pylint
+    "D",         # pydocstyle
+]
+ignore = [
+    # Докстринги dunder-методов и `__init__` покрывает докстринг класса; всё
+    # остальное (модуль, пакет, класс, метод, функция) обязательно.
+    "D105",
+    "D107",
+    # Комментарии и докстринги здесь по-русски: кириллица — не «неоднозначный
+    # символ», а язык проекта.
+    "RUF001",
+    "RUF002",
+    "RUF003",
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+# FastAPI объявляет зависимость вызовом в значении по умолчанию
+# (`settings: Settings = Depends(get_settings)`), и `B008` видит в этом
+# изменяемый дефолт. Исключение объявлено здесь, а не `# noqa` по месту.
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = [
+    "fastapi.Body",
+    "fastapi.Depends",
+    "fastapi.Header",
+    "fastapi.Path",
+    "fastapi.Query",
+    "fastapi.Security",
+]
+
+# `**/tests/**`, а не `tests/**`: шаблон со слэшем ruff сверяет с путём от корня
+# конфига целиком, и второй вариант оставил бы тесты под `S101` (assert) и `D`
+# (докстринг на каждый тест). `PLR2004` снят там же — ожидаемый код ответа
+# пишется числом прямо в проверке, именованная константа рядом с ним ничего не
+# объясняет.
+[tool.ruff.lint.per-file-ignores]
+"**/tests/**" = ["S101", "PLR2004", "ARG", "D"]
+
+[tool.mypy]
+# Плагин обязателен: `__init__` модели pydantic синтезируется в рантайме по
+# полям, и без плагина mypy видит `**kwargs: Any` — любой вызов конструктора
+# проходит проверку. Плагин восстанавливает сигнатуру.
+plugins = ["pydantic.mypy"]
+python_version = "3.13"
+
+# Явный список вместо `mypy .`: иначе в проверку затягивается `.venv` со
+# сторонними пакетами, и вердикт перестаёт быть про наш код.
+files = ["tg_telnyx_notifier", "tests"]
+exclude = "(^|/)(\\.venv|build|dist|.*\\.egg-info)/"
+
+# У `tests` нет `__init__.py`, и без этого имя модуля выводится не от корня
+# репозитория — mypy жалуется на файл вне пакета.
+explicit_package_bases = true
+mypy_path = ["."]
+
+# `strict` включает весь набор из руководства pydantic (disallow_untyped_defs,
+# disallow_any_generics, warn_redundant_casts, warn_unused_ignores,
+# no_implicit_reexport и остальные). Перечислять их поимённо — значит
+# зафиксировать сегодняшний состав и не получить то, что добавят потом.
+strict = true
+# Ошибки из чужого кода по цепочке импортов не наши; свои файлы проверяются
+# полностью в любом случае.
+follow_imports = "silent"
+# Код без аннотаций проверяется как обычный: правило снимает исключение для
+# тестов, где `disallow_untyped_defs` не срабатывает.
+check_untyped_defs = true
+# Код правила в выводе — иначе непонятно, что именно сработало.
+show_error_codes = true
+pretty = true
+
+[tool.pydantic-mypy]
+# Типы полей в синтезированном `__init__` — настоящие, а не `Any`.
+init_typed = true
+# Лишний аргумент конструктора — ошибка, а не молча проглоченный kwarg.
+init_forbid_extra = true
+# Динамический alias при `validate_by_name = False` mypy проверить не может —
+# пусть об этом скажут, а не тихо пропустят.
+warn_required_dynamic_aliases = true
