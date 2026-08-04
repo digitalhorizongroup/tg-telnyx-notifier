@@ -7,6 +7,7 @@ name = "tg-telnyx-notifier"
 dynamic = ["version"]
 description = "Приём сообщений с номеров Telnyx и пересылка их в Telegram-канал"
 readme = "README.md"
+license = "MIT"
 keywords = ["telnyx", "telegram", "sms", "mms", "webhook", "fastapi", "notifier"]
 requires-python = ">=3.13"
 # Один процесс держит оба конца маршрута: FastAPI принимает webhook Telnyx о
@@ -28,6 +29,8 @@ dependencies = [
 [project.urls]
 Repository = "https://github.com/digitalhorizongroup/tg-telnyx-notifier"
 Issues = "https://github.com/digitalhorizongroup/tg-telnyx-notifier/issues"
+Telegram = "https://t.me/digitalhorizongroup"
+Discord = "https://discord.com/invite/fjqzSYCETC"
 
 # Запуск — консольная команда и `python -m tgtn` разом: обе ведут в `main()`
 # того же модуля, отдельного скрипта-лаунчера в проекте нет.
